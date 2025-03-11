@@ -27,6 +27,21 @@ app.get("/csvUploader", authenticateToken, (req, res) => {
   res.json({ message: "Acesso ao CSV Uploader permitido", userId: req.user.userId });
 });
 
+app.post("/verify-token", (req, res) => {
+  const token = req.headers.authorization?.split(" ")[1]; // Pega o token do header
+
+  if (!token) {
+    return res.status(401).json({ message: "Token não fornecido." });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    res.status(200).json({ message: "Token válido.", userId: decoded.userId });
+  } catch (error) {
+    res.status(401).json({ message: "Token inválido ou expirado." });
+  }
+});
+
 // 📝 Rota para cadastrar usuário
 app.post("/register", async (req, res) => {
   const { firstName, lastName, phone, cityState, email, password } = req.body;
