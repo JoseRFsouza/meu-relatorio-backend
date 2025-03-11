@@ -100,15 +100,25 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// 📝 Rota protegida (verifica JWT)
-app.get("/profile", (req, res) => {
-  const token = req.headers["authorization"];
-  if (!token) return res.status(403).json({ message: "Token não fornecido" });
+// Rota protegida, usando o middleware para autenticação
+app.get("/profile", authenticateToken, async (req, res) => {
+  try {
+    // Aqui, o usuário já foi carregado e armazenado em `req.user` pelo middleware
+    const user = req.user;
 
-  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-    if (err) return res.status(401).json({ message: "Token inválido" });
-    res.json({ message: "Acesso permitido", userId: decoded.userId });
-  });
+    // Retorna os dados do usuário
+    res.json({
+      message: "Acesso permitido",
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      phone: user.phone, // Caso tenha esse campo
+      cityState: user.cityState, // Caso tenha esse campo
+    });
+  } catch (err) {
+    console.error("Erro ao obter os dados do usuário:", err);
+    return res.status(500).json({ message: "Erro ao obter dados do usuário" });
+  }
 });
 
 const PORT = process.env.PORT || 5000;

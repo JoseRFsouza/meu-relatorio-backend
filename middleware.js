@@ -1,20 +1,34 @@
 const jwt = require("jsonwebtoken");
+const User = require("./user"); 
 
-// Middleware para validar o token JWT
-const authenticateToken = (req, res, next) => {
-  const token = req.headers["authorization"]; // Obtemos o token do cabeçalho
+const authMiddleware = async (req, res, next) => {
+  const token = req.headers["authorization"];
 
+  // Verifica se o token foi fornecido
   if (!token) {
     return res.status(403).json({ message: "Token não fornecido" });
   }
 
-  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-    if (err) {
-      return res.status(401).json({ message: "Token inválido" });
+  // Remove o prefixo "Bearer " caso esteja presente
+  const tokenWithoutBearer = token.replace("Bearer ", "");
+
+  try {
+    // Decodifica o token
+    const decoded = jwt.verify(tokenWithoutBearer, process.env.JWT_SECRET);
+
+    // Adiciona os dados do usuário no objeto `req` para usar nas rotas
+    const user = await User.findById(decoded.userId);
+    if (!user) {
+      return res.status(404).json({ message: "Usuário não encontrado" });
     }
-    req.user = decoded; // Armazenamos os dados do usuário decodificados para uso posterior
-    next(); // Chama o próximo middleware ou a rota
-  });
+
+    // Armazenando dados do usuário na requisição para ser acessado nas rotas
+    req.user = user;
+    next(); // Passa para a próxima função ou rota
+  } catch (err) {
+    // Se houver erro ao verificar o token
+    return res.status(401).json({ message: "Token inválido" });
+  }
 };
 
-module.exports = authenticateToken;
+module.exports = authMiddleware;
