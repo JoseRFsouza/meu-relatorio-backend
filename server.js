@@ -121,5 +121,34 @@ app.get("/profile", authenticateToken, async (req, res) => {
   }
 });
 
+// Rota protegida para editar dados do usuário
+app.put("/profile/edit", authenticateToken, async (req, res) => {
+  try {
+    const { firstName, lastName, phone, cityState } = req.body;
+    const userId = req.user._id; // ID do usuário autenticado
+
+    if (!firstName || !lastName || !phone || !cityState) {
+      return res.status(400).json({ message: "Todos os campos são obrigatórios." });
+    }
+
+    // Atualiza o usuário no banco de dados
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { firstName, lastName, phone, cityState },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "Usuário não encontrado." });
+    }
+
+    res.status(200).json({ message: "Dados atualizados com sucesso.", user: updatedUser });
+  } catch (error) {
+    console.error("Erro ao atualizar os dados do usuário:", error);
+    res.status(500).json({ message: "Erro ao atualizar os dados do usuário." });
+  }
+});
+
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
