@@ -60,6 +60,7 @@ app.post("/register", async (req, res) => {
       cityState,
       email,
       password: hashedPassword,
+      userType: 'Free',
     });
 
     await newUser.save();
@@ -70,7 +71,7 @@ app.post("/register", async (req, res) => {
   }
 });
 
-// 📝 Rota para login e geração de token JWT
+// Rota para login e geração de token JWT
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
@@ -93,12 +94,14 @@ app.post("/login", async (req, res) => {
 
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
 
-    res.status(200).json({ token });
+    // Retornar token e userType no login
+    res.status(200).json({ token, userType: user.userType }); // Incluindo o userType na resposta
   } catch (error) {
     console.error("Erro ao fazer login:", error);
     res.status(500).json({ message: "Erro ao fazer login." });
   }
 });
+
 
 // Rota protegida, usando o middleware para autenticação
 app.get("/profile", authenticateToken, async (req, res) => {
@@ -114,6 +117,7 @@ app.get("/profile", authenticateToken, async (req, res) => {
       email: user.email,
       phone: user.phone, // Caso tenha esse campo
       cityState: user.cityState, // Caso tenha esse campo
+      userType: user.userType,
     });
   } catch (err) {
     console.error("Erro ao obter os dados do usuário:", err);
